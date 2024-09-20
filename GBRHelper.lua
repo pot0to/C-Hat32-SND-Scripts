@@ -981,8 +981,9 @@ function SwapCharacters()
 	for i=1, #Characters do
 		if Characters[i].visited == nil then
 			Characters[i].visited = true
-			if GetCharacterName(true) ~= Characters[i].characterName.."@"..Characters[i].worldName then
-				ield("/ays relog "..Characters[i].characterName.."@"..Characters[i].worldName)
+			local nextCharacterName = Characters[i].characterName.."@"..Characters[i].worldName
+			if GetCharacterName(true) ~= nextCharacterName then
+				ield("/ays relog "..nextCharacterName)
 				yield("/wait 3")
 				yield("/waitaddon _ActionBar <maxwait.600><wait.5>")
 			end
