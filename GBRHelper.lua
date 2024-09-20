@@ -130,7 +130,7 @@ repair_threshold = 50									--value at which to repair gear
 
 do_extract  = true                                      --If true, will extract materia if possible
 
-do_reduce   = true                                      --If true, will perform aetherial reduction if possible.
+do_reduce   = false                                     --If true, will perform aetherial reduction if possible.
 reduce_gp_threshold = 250								--Will prefer reducing if gp is lower than that value to optimize low-gp time
 reduce_free_slot = 5									--Inventory slots left before forcing aetherial reduction
 
@@ -149,6 +149,14 @@ collectables_script_name = "AutoCollectables_SingleRun"	--Name of the collectabl
 														--It will be used to select the collectable actions.
 														--Know that it's possible to customize the collectable rotation in that script but I won't provide support for that.
 
+-- Multi Character Settings
+multimode = true										--Whether to multi
+Characters =											--Character names to multi
+{
+	{ characterName="Cyriac Klein", worldName="Midgardsormr" },
+	{ characterName="Otoro Tunacat", worldName="Midgardsormr" }
+}
+
 ---Misc Settings
 do_random_pause = false									--Make random pauses at set intervals
 pause_duration = 40										--Pause duration in seconds
@@ -166,9 +174,7 @@ stuck_distance_allowed = 0.05							--Error margin for considering character is 
 position_rounding_precision = 2							--Numbers of decimals to keep when checking the player position
 
 
-
-
--- INIT
+--#region INIT
 stop_main = false
 last_pause = os.clock()
 next_pause_time = pause_delay + math.random(-pause_delay_rand, pause_delay_rand)
@@ -178,7 +184,9 @@ checked_reductibles_this_loop = false
 last_reducibles_status = false
 area_change_end = 0
 
--- MAIN
+--#endregion INIT
+
+--#region MAIN
 function main()	
 		
 	if not HasAllDependencies() then
@@ -191,6 +199,7 @@ function main()
 	last_player_position = GetPlayerPosition()
 	
 	yield("/gbr auto on") -- enabling gbr
+	LogInfo("main waitnextloop")
 	WaitNextLoop()
 	
 	while not stop_main do -- Main Loop
@@ -201,11 +210,12 @@ function main()
 		if not GetCharacterCondition(6) then DrinkPot() end
 				
 		if(HasActionsToDo()) then
-			
+			LogInfo("main waitnextloop 2")
 			WaitNextLoop()
 			Print("Actions required, pausing gbr")
 			yield("/gbr auto off")
 			yield("/wait "..interval_rate)
+			LogInfo("main waitnextloop 3")
 			WaitNextLoop()
 			StopMoveFly()
 			
@@ -228,13 +238,18 @@ function main()
 			yield("/gbr auto on")
 			Print("Actions finished, enabling gbr")	
 			ResetStuck()
-		end		
+		end
+
+		LogInfo("/echo character not 6"..tostring(not GetCharacterCondition(6)))
+		LogInfo("/echo actionstodo "..tostring(HasActionsToDo()))
 		
-		if (not GetCharacterCondition(6) and HasActionsToDo())
-			or GetInventoryFreeSlotCount() <= num_inventory_free_slot_threshold then
-				if GetInventoryFreeSlotCount() <= num_inventory_free_slot_threshold then
-					Print("Inventory free slot threshold reached. Disabling gbr and script")
-				end
+		if (not GetCharacterCondition(6) and not HasActionsToDo())
+			or GetInventoryFreeSlotCount() <= num_inventory_free_slot_threshold
+		then
+
+			if GetInventoryFreeSlotCount() <= num_inventory_free_slot_threshold then
+				Print("Inventory free slot threshold reached. Disabling gbr and script")
+			end
 				
 			stop_main = true
 			yield("/gbr auto off") -- disabling gbr
@@ -247,6 +262,7 @@ function main()
 			CheckRandomPause()
 		end
 		
+		LogInfo("main waitnextloop 4")
 		WaitNextLoop()
 		
 		yield("/wait "..interval_rate)
@@ -254,6 +270,7 @@ function main()
 end
 
 function WaitNextLoop()
+	LogInfo("waitnext loop")
 
 	if GetCharacterCondition(6) then
 		checked_reductibles_this_loop = false
@@ -262,7 +279,7 @@ function WaitNextLoop()
 	local was_wait_casting = false
 	
 	while (GetCharacterCondition(6) or GetCharacterCondition(32) or GetCharacterCondition(45) or GetCharacterCondition(27) or not IsPlayerAvailable() or PathfindInProgress()) do
-		yield("/wait "..interval_rate)		
+		yield("/wait "..interval_rate)
 		if use_custom_collectables_rotation and IsAddonVisible("GatheringMasterpiece") and collectables_script_name ~= "" then
 			yield("/runmacro "..collectables_script_name)
 		end
@@ -281,6 +298,7 @@ function WaitNextLoop()
 	
 	if (was_wait_casting) then
 		yield("/wait 1")
+		LogInfo("recursive waitnextloop")
 		WaitNextLoop()
 	end
 	
@@ -374,6 +392,7 @@ end
 
 --Check if actions needed
 function HasActionsToDo()
+	LogInfo("check actions  to do")
 
 	return (do_repair and IsNeedRepair())
 		or (do_extract and CanExtractMateria())
@@ -433,7 +452,7 @@ function CanCharacterDoActions()
 end
 
 function RepairExtractReduceCheck()
-	
+	LogInfo("repairextract waitnextloop")
 	WaitNextLoop()
 	
     local repair_token = IsNeedRepair()
@@ -605,6 +624,7 @@ function CheckQueue()
 	if GetCharacterCondition(59) then -- Queue popped
 		stop_main = true
 		Print("Queue pop, stopping script and gbr")
+		LogInfo("checkqueue waitnextloop")
 		WaitNextLoop()
 		yield("/gbr auto off")
 		return true
@@ -677,7 +697,7 @@ end
 --Wrapper to handle Retainers
 function CheckRetainers()
 	if do_retainers == true then
-	
+		LogInfo("check retainers waitnextloop")
 		WaitNextLoop()
 		if ARRetainersWaitingToBeProcessed() == true then
 			
@@ -827,6 +847,7 @@ function CheckStuck()
 	end	
 	
 	last_player_position = new_player_position
+	LogInfo("check stuck waitnextloop")
 	WaitNextLoop()
 	
 end
@@ -956,4 +977,26 @@ function Print(message)
 	yield("/echo [GBR HELPER] "..message)
 end
 
-main()
+function SwapCharacters()
+	for i=1, #Characters do
+		if Characters[i].visited == nil then
+			Characters[i].visited = true
+			yield("/ays relog "..Characters[i].characterName.."@"..Characters[i].worldName)
+			yield("/wait 3")
+			yield("/waitaddon _ActionBar <maxwait.600><wait.5>")
+
+			return
+		end
+	end
+	multimode = false
+end
+
+repeat
+	main()
+	if multimode then
+		yield("/ays multi e") -- enable AR multi
+		SwapCharacters()
+	end
+until not multimode
+
+--#endregion #MAIN
