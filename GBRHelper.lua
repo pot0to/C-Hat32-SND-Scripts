@@ -268,6 +268,7 @@ function main()
 		yield("/wait "..interval_rate)
 	end
 
+	WaitNextLoop()
 	if stop_main and multimode then
 		stop_main = false
 		yield("/ays multi e") -- enable AR multi
@@ -993,7 +994,6 @@ function SwapCharacters()
 				yield("/wait 3")
 				yield("/waitaddon _ActionBar <maxwait.600><wait.5>")
 			end
-
 			return
 		end
 	end
