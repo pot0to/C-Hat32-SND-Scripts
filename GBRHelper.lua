@@ -236,7 +236,7 @@ function main()
 			end
 			
 			yield("/gbr auto on")
-			Print("Actions finished, enabling gbr")	
+			Print("Actions finished, enabling gbr")
 			ResetStuck()
 		end
 
@@ -983,7 +983,7 @@ function SwapCharacters()
 			Characters[i].visited = true
 			local nextCharacterName = Characters[i].characterName.."@"..Characters[i].worldName
 			if GetCharacterName(true) ~= nextCharacterName then
-				ield("/ays relog "..nextCharacterName)
+				yield("/ays relog "..nextCharacterName)
 				yield("/wait 3")
 				yield("/waitaddon _ActionBar <maxwait.600><wait.5>")
 			end
@@ -996,6 +996,7 @@ end
 
 repeat
 	main()
+	stop_main = false
 	if multimode then
 		yield("/ays multi e") -- enable AR multi
 		SwapCharacters()
