@@ -240,7 +240,7 @@ function main()
 			ResetStuck()
 		end
 
-		LogInfo("/echo character not 6"..tostring(not GetCharacterCondition(6)))
+		LogInfo("/echo character not 6 "..tostring(not GetCharacterCondition(6)))
 		LogInfo("/echo actionstodo "..tostring(HasActionsToDo()))
 		
 		if (not GetCharacterCondition(6) and not HasActionsToDo())
@@ -266,6 +266,12 @@ function main()
 		WaitNextLoop()
 		
 		yield("/wait "..interval_rate)
+	end
+
+	if stop_main and multimode then
+		stop_main = false
+		yield("/ays multi e") -- enable AR multi
+		SwapCharacters()
 	end
 end
 
@@ -996,11 +1002,6 @@ end
 
 repeat
 	main()
-	stop_main = false
-	if multimode then
-		yield("/ays multi e") -- enable AR multi
-		SwapCharacters()
-	end
 until not multimode
 
 --#endregion #MAIN
